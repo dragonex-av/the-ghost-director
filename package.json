@@ -1,0 +1,31 @@
+{
+  "name": "the-ghost-director",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Ghost-Director: Amazon Developer Hackathon — Living Room (Fire TV) + Front Door (Ring) + Brain (Alexa+ MCP + AWS Bedrock) + Wearable (Bee)",
+  "type": "module",
+  "main": "start.js",
+  "scripts": {
+    "dev": "node start.js",
+    "start": "node start.js",
+    "test": "node mcp-server-alexa/tests/mcp.test.js",
+    "dev:mcp": "node mcp-server-alexa/server.js",
+    "dev:firetv": "node fire-tv-app/serve.js",
+    "dev:firetv:vite": "cd fire-tv-app && npm run dev",
+    "build:firetv": "cd fire-tv-app && npm run build"
+  },
+  "keywords": [
+    "amazon-hackathon",
+    "fire-tv",
+    "ring",
+    "alexa-plus",
+    "mcp",
+    "model-context-protocol",
+    "aws-bedrock",
+    "agentcore",
+    "bee-wearable",
+    "vega-os"
+  ],
+  "author": "The Ghost-Director Team",
+  "license": "MIT"
+}

@@ -1,0 +1,35 @@
+{
+  "name": "the-ghost-director-alexa-mcp",
+  "version": "1.0.0",
+  "description": "Alexa+ MCP server connecting Fire TV, Ring Video Doorbell, and Bee Wearable via AWS Bedrock AgentCore",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node tests/mcp.test.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.750.0",
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  },
+  "keywords": [
+    "alexa-plus",
+    "mcp",
+    "model-context-protocol",
+    "aws-bedrock",
+    "fire-tv",
+    "ring",
+    "bee-wearable",
+    "amazon-hackathon"
+  ],
+  "author": "The Ghost-Director Team",
+  "license": "MIT"
+}

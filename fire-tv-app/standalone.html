@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>The Ghost-Director | Amazon Developer Hackathon (Fire TV, Ring, Alexa+ MCP, Bee)</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            amazon: {
+              orange: '#FF9900',
+              hover: '#FFAC33',
+              glow: 'rgba(255, 153, 0, 0.45)',
+              prime: '#00A8E1',
+              charcoal: '#131921',
+            },
+            alexa: {
+              cyan: '#00CAFF',
+              glow: 'rgba(0, 202, 255, 0.5)',
+            },
+            vega: {
+              bg: '#080B10',
+              surface: '#101622',
+              surfaceHover: '#182235',
+            }
+          },
+          fontFamily: {
+            sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+          },
+          boxShadow: {
+            'neon-orange': '0 0 25px rgba(255, 153, 0, 0.35)',
+            'neon-cyan': '0 0 25px rgba(0, 202, 255, 0.4)',
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Outfit', sans-serif; background-color: #080B10; }
+    .camera-scanline {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+      background-size: 100% 4px;
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 15px rgba(255, 153, 0, 0.3); }
+      100% { box-shadow: 0 0 35px rgba(255, 153, 0, 0.7), 0 0 15px rgba(0, 202, 255, 0.5); }
+    }
+    .director-pip-glow { animation: pulseGlow 2s infinite alternate; }
+    .tab-active { background-color: #FF9900 !important; color: #000 !important; font-weight: 800 !important; }
+  </style>
+</head>
+<body class="bg-vega-bg text-slate-100 min-h-screen flex flex-col selection:bg-amazon-orange selection:text-black">
+
+  <!-- ======================================================================== -->
+  <!-- TOP HEADER & NAVIGATION                                                  -->
+  <!-- ======================================================================== -->
+  <header class="w-full bg-vega-surface/90 backdrop-blur-md border-b border-white/10 px-4 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-40">
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amazon-orange to-alexa-cyan p-0.5 shadow-neon-orange flex items-center justify-center">
+        <div class="w-full h-full bg-vega-bg rounded-[10px] flex items-center justify-center text-amazon-orange">
+          <i data-lucide="sparkles" class="w-5 h-5 text-amazon-orange"></i>
+        </div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-black tracking-wider text-white uppercase">
+            The Ghost<span class="text-amazon-orange">-</span>Director
+          </h1>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amazon-orange/15 text-amazon-orange border border-amazon-orange/30">
+            AMAZON HACKATHON
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 font-mono hidden sm:block">
+          Fire TV 4K • Ring Vision • Alexa+ MCP Streamable HTTP • Bee Wearable • AWS Bedrock
+        </p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs (Cinema / Judge Console / Guide / Inspector) -->
+    <div class="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-white/10">
+      <button onclick="switchTab('cinema')" id="tabBtn-cinema" class="tab-btn tab-active px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5">
+        <i data-lucide="tv" class="w-3.5 h-3.5"></i>
+        <span>Fire TV Cinema</span>
+      </button>
+
+      <button onclick="switchTab('judge')" id="tabBtn-judge" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+        <i data-lucide="sliders" class="w-3.5 h-3.5 text-amazon-orange"></i>
+        <span>Judge Console</span>
+      </button>
+
+      <button onclick="switchTab('guide')" id="tabBtn-guide" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-alexa-cyan"></i>
+        <span>Guide & Tours</span>
+      </button>
+
+      <button onclick="switchTab('inspector')" id="tabBtn-inspector" class="tab-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5 hidden md:flex">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-purple-400"></i>
+        <span>MCP Wire</span>
+      </button>
+    </div>
+
+    <!-- Live Controls: Audio Toggle, Alexa Voice, Remote Modal -->
+    <div class="flex items-center gap-2">
+      <!-- Real Audio Engine Toggle Button -->
+      <button onclick="toggleAudioEngine()" id="audioToggleBtn" class="px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-mono text-slate-300 flex items-center gap-1.5" title="Toggle Real Living Room Cinema Audio">
+        <i data-lucide="volume-2" id="audioToggleIcon" class="w-4 h-4 text-slate-400"></i>
+        <span id="audioToggleText" class="hidden sm:inline">Audio: OFF</span>
+      </button>
+
+      <!-- Alexa Voice Mic -->
+      <button onclick="openVoiceDialog()" class="px-3 py-1.5 rounded-xl bg-alexa-cyan text-black text-xs font-black shadow-neon-cyan flex items-center gap-1.5 hover:bg-cyan-300 transition-colors">
+        <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+        <span>Alexa</span>
+      </button>
+
+      <!-- Remote Control Simulator -->
+      <button onclick="toggleRemoteModal()" class="p-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:text-white flex items-center" title="Open Fire TV Remote">
+        <i data-lucide="smartphone" class="w-4 h-4 text-amazon-orange"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ======================================================================== -->
+  <!-- MAIN CONTAINER WITH DYNAMIC TABS                                         -->
+  <!-- ======================================================================== -->
+  <main class="flex-1 max-w-[1720px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
+
+    <!-- STATUS BAR (HARDWARE TELEMETRY TICKER) -->
+    <div class="flex flex-wrap items-center justify-between gap-3 bg-vega-surface/70 border border-white/10 px-4 py-2.5 rounded-2xl text-xs font-mono">
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-400">MCP Stream:</span>
+          <span id="statusBarMcp" class="text-emerald-400 font-bold">CONNECTED (:3001)</span>
+        </div>
+        <div class="text-slate-600">•</div>
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-alexa-cyan"></i>
+          <span class="text-slate-400">AWS Bedrock:</span>
+          <span id="statusBarBedrock" class="text-alexa-cyan font-bold">182ms (Claude 3.5 Sonnet)</span>
+        </div>
+        <div class="text-slate-600">•</div>
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="watch" class="w-3.5 h-3.5 text-purple-400"></i>
+          <span class="text-slate-400">Bee Wearable:</span>
+          <span id="statusBarBee" class="text-purple-300 font-bold">Relaxing (Focus: 72% • 68 BPM)</span>
+        </div>
+        <div class="text-slate-600">•</div>
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="bell" class="w-3.5 h-3.5 text-amazon-orange"></i>
+          <span class="text-slate-400">Ring Doorbell:</span>
+          <span id="statusBarRing" class="text-amazon-orange font-bold">1080P Hardwired (Porch Clear)</span>
+        </div>
+      </div>
+
+      <div class="text-slate-500 text-[11px]">
+        Press <kbd class="px-1.5 py-0.5 bg-black/60 rounded border border-white/10 text-slate-300 font-bold">P</kbd> to Pause, <kbd class="px-1.5 py-0.5 bg-black/60 rounded border border-white/10 text-slate-300 font-bold">M</kbd> for Alexa
+      </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- TAB 1: FIRE TV CINEMA EXPERIENCE                                       -->
+    <!-- ====================================================================== -->
+    <section id="tabContent-cinema" class="space-y-6">
+      <div class="relative w-full aspect-[16/9] min-h-[500px] max-h-[760px] bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl flex flex-col justify-between select-none group">
+        <!-- Cinema Backdrop -->
+        <img id="cinemaBackdrop" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80" alt="Fallout" class="absolute inset-0 w-full h-full object-cover opacity-90 transition-all duration-700" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-black/60 pointer-events-none"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-black/80 pointer-events-none"></div>
+
+        <!-- Cinema Top Bar -->
+        <div class="relative z-10 p-6 lg:p-10 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 bg-amazon-prime text-black font-black text-xs rounded uppercase tracking-wider font-mono">
+              Prime Video 4K
+            </span>
+            <div class="flex items-center gap-2 text-xs font-semibold text-slate-300 font-mono">
+              <span class="px-2 py-0.5 bg-white/10 rounded">HDR10+</span>
+              <span class="px-2 py-0.5 bg-white/10 rounded">DOLBY ATMOS</span>
+              <span class="px-2 py-0.5 bg-amazon-orange/20 text-amazon-orange rounded border border-amazon-orange/30 font-bold">X-RAY</span>
+            </div>
+          </div>
+
+          <div class="bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs font-mono text-slate-300 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Vega OS 1.4 TV Engine</span>
+          </div>
+        </div>
+
+        <!-- Ambient Subtitle Whisper Ticker (During Deep Focus) -->
+        <div id="subtitleWhisperBox" class="hidden relative z-20 self-center max-w-xl mx-auto px-6 py-3 rounded-2xl bg-black/90 backdrop-blur-xl border border-alexa-cyan/50 shadow-neon-cyan text-center">
+          <div class="text-xs font-mono text-alexa-cyan uppercase font-bold tracking-wider mb-1 flex items-center justify-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 animate-spin"></i>
+            Ghost-Director Ambient Whisper (Deep Focus Active)
+          </div>
+          <p id="subtitleWhisperText" class="text-sm font-semibold text-white"></p>
+        </div>
+
+        <!-- Cinema Bottom Bar with Audio Ducking Spectrum -->
+        <div class="relative z-10 p-6 lg:p-10 space-y-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs font-bold text-amazon-orange tracking-widest uppercase">Post-Apocalyptic Sci-Fi</span>
+              <span class="text-slate-600">•</span>
+              <span class="text-xs text-slate-400 font-mono">Scene: Action Climax</span>
+            </div>
+            <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight drop-shadow-md">
+              Fallout — Season 2 (Exclusive Preview)
+            </h2>
+            <p class="text-sm text-slate-300 max-w-xl mt-1 line-clamp-2">
+              The Wasteland holds new terrors beneath the California neon. Real-time living room acoustic ducking orchestrated by The Ghost-Director.
+            </p>
+          </div>
+
+          <!-- Timeline Scrubber -->
+          <div class="space-y-1.5">
+            <div class="relative w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div id="progressBar" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-amazon-orange to-alexa-cyan rounded-full transition-all duration-300" style="width: 68%;"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs font-mono text-slate-400">
+              <span id="timecodeText">44:12</span>
+              <span>60 FPS • 3840x2160 • Living Room TV</span>
+              <span>01:02:40</span>
+            </div>
+          </div>
+
+          <!-- Controls Bar & Dynamic Audio Spectrum -->
+          <div class="flex items-center justify-between pt-2 border-t border-white/10">
+            <div class="flex items-center gap-3">
+              <button onclick="togglePlayback()" id="playPauseBtn" class="w-12 h-12 rounded-2xl bg-white text-black hover:bg-amazon-orange transition-all flex items-center justify-center font-bold shadow-lg">
+                <i data-lucide="pause" id="playPauseIcon" class="w-5 h-5 fill-current"></i>
+              </button>
+              <div>
+                <div id="playbackStatusText" class="text-xs font-bold text-white uppercase tracking-wider">Now Playing</div>
+                <div class="text-[11px] text-slate-400 font-mono">Press [Play/Pause] or [Space] on remote</div>
+              </div>
+            </div>
+
+            <!-- Dynamic Audio Spectrum Ducking Visualizer -->
+            <div class="flex items-center gap-4 bg-vega-surface/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10">
+              <div class="flex items-center gap-2">
+                <i data-lucide="volume-2" id="volumeIcon" class="w-4 h-4 text-slate-300"></i>
+                <div class="flex flex-col">
+                  <span class="text-[10px] font-mono uppercase text-slate-400">Living Room Audio</span>
+                  <span id="volumeLevelText" class="text-xs font-mono font-bold text-white">75% (Full Cinema Score)</span>
+                </div>
+              </div>
+
+              <!-- Waveform bars that physically duck and shrink -->
+              <div id="audioSpectrumBars" class="flex items-end gap-1 h-6 w-28">
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 60%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 90%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 45%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 100%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 75%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 85%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 35%"></div>
+                <div class="flex-1 bg-alexa-cyan rounded-full transition-all duration-200" style="height: 95%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================== -->
+    <!-- TAB 2: JUDGE SIMULATION CONTROL CENTER                                 -->
+    <!-- ====================================================================== -->
+    <section id="tabContent-judge" class="hidden space-y-6">
+      <div class="bg-vega-surface border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-2xl bg-amazon-orange/15 text-amazon-orange border border-amazon-orange/30 shadow-neon-orange">
+              <i data-lucide="sliders" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                Judge Interactive Control Station
+              </h3>
+              <p class="text-xs text-slate-400">
+                Trigger Ring front door events and modulate Bee wearable biometrics to observe AWS Bedrock AgentCore & Fire TV reaction.
+              </p>
+            </div>
+          </div>
+
+          <button onclick="resetDemoState()" class="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+            <span>Reset Demo</span>
+          </button>
+        </div>
+
+        <!-- Grid: 1. Ring Event Injector & 2. Bee Wearable Controller -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- 1. Ring Doorbell Triggers -->
+          <div class="space-y-3 bg-black/40 p-5 rounded-2xl border border-white/5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-amazon-orange uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="bell" class="w-4 h-4"></i>
+                1. Inject Ring Doorbell Event (Front Door)
+              </span>
+              <span class="text-[10px] font-mono text-slate-500">POST /webhooks/ring</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="triggerPreset('prime-courier')" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amazon-orange transition-all group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <i data-lucide="package" class="w-5 h-5 text-amazon-orange group-hover:scale-110 transition-transform"></i>
+                  <span class="text-[9px] font-mono bg-amazon-orange/20 text-amazon-orange px-2 py-0.5 rounded font-bold">INJECT</span>
+                </div>
+                <div class="text-xs font-bold text-white">📦 Amazon Prime Courier</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Package drop • Ducks audio to 45%</div>
+              </button>
+
+              <button onclick="triggerPreset('stranger-lingering')" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-red-500 transition-all group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-[9px] font-mono bg-red-500/20 text-red-400 px-2 py-0.5 rounded font-bold">INJECT</span>
+                </div>
+                <div class="text-xs font-bold text-white">👤 Stranger Alert</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Figure lingering >45s • High urgency</div>
+              </button>
+
+              <button onclick="triggerPreset('doorbell-chime')" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-cyan-400 transition-all group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <i data-lucide="bell" class="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-[9px] font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded font-bold">INJECT</span>
+                </div>
+                <div class="text-xs font-bold text-white">🔔 Doorbell Pressed</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Chime sound • 2-Way Intercom</div>
+              </button>
+
+              <button onclick="triggerPreset('family-return')" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-emerald-400 transition-all group">
+                <div class="flex items-center justify-between mb-1.5">
+                  <i data-lucide="user-check" class="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform"></i>
+                  <span class="text-[9px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold">INJECT</span>
+                </div>
+                <div class="text-xs font-bold text-white">👋 Family Member Return</div>
+                <div class="text-[11px] text-slate-400 mt-0.5">Face match: Sarah • Welcome chime</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Bee Wearable State Controller -->
+          <div class="space-y-3 bg-black/40 p-5 rounded-2xl border border-white/5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-lucide="watch" class="w-4 h-4"></i>
+                2. Bee Wearable Immersion State
+              </span>
+              <span class="text-[10px] font-mono text-purple-300">POST /telemetry/bee</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="setBeeContext('Relaxing', 72, 68, 40)" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400 transition-all">
+                <div class="text-xs font-bold text-white">🛋️ Relaxing (Movie Night)</div>
+                <div class="text-[11px] font-mono text-slate-400 mt-0.5">Focus: 72% • HR: 68 BPM (Allows PiP)</div>
+              </button>
+
+              <button onclick="setBeeContext('Deep Focus', 96, 84, 32)" class="text-left p-3.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 hover:border-purple-400 transition-all">
+                <div class="text-xs font-bold text-purple-300">🧘 Deep Focus (Do Not Disturb)</div>
+                <div class="text-[11px] font-mono text-purple-400 mt-0.5">Focus: 96% • Suppresses Video PiP</div>
+              </button>
+
+              <button onclick="setBeeContext('Active / Cooking', 55, 92, 64)" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400 transition-all">
+                <div class="text-xs font-bold text-white">🍳 Active / Cooking</div>
+                <div class="text-[11px] font-mono text-slate-400 mt-0.5">Focus: 55% • HR: 92 BPM</div>
+              </button>
+
+              <button onclick="setBeeContext('Workout', 40, 128, 72)" class="text-left p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-purple-400 transition-all">
+                <div class="text-xs font-bold text-white">🏃 Workout Mode</div>
+                <div class="text-[11px] font-mono text-slate-400 mt-0.5">Focus: 40% • HR: 128 BPM</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Bedrock AgentCore Reasoning Inspector -->
+        <div class="pt-4 border-t border-white/10 space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono">
+            <span class="text-slate-400 flex items-center gap-1.5 font-bold">
+              <i data-lucide="cpu" class="w-4 h-4 text-alexa-cyan"></i>
+              AWS Bedrock AgentCore Neural Decision Inspector (AWS Mini-Challenge)
+            </span>
+            <span id="bedrockInspectorLatency" class="text-emerald-400 font-bold">182ms inference</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-black/60 border border-white/10 rounded-2xl p-4">
+              <span class="text-[10px] font-mono uppercase text-slate-500">Determined Action</span>
+              <div id="inspectorAction" class="text-lg font-black text-amazon-orange tracking-wide mt-1">CINEMATIC_PIP</div>
+              <div class="text-xs text-slate-400 mt-1">Ducking: <span id="inspectorDucking" class="text-alexa-cyan font-bold font-mono">45%</span></div>
+            </div>
+
+            <div class="bg-black/60 border border-white/10 rounded-2xl p-4 md:col-span-2">
+              <span class="text-[10px] font-mono uppercase text-slate-500">Director Commentary Script</span>
+              <p id="inspectorCommentary" class="text-xs sm:text-sm text-slate-100 italic leading-relaxed mt-1">
+                "Amazon Prime courier has safely placed a parcel on the front mat. Playback continues uninterrupted with ambient ducking."
+              </p>
+              <div class="text-[11px] text-slate-400 mt-2 font-mono" id="inspectorReasoning">
+                Reasoning: Verified Amazon delivery uniform with package. Bee wearable indicates active entertainment viewing (Focus 72%). Non-intrusive PiP activated without media stop.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================== -->
+    <!-- TAB 3: INTERACTIVE HACKATHON GUIDE & AUTOMATED TOURS ("GUIDE TAB")     -->
+    <!-- ====================================================================== -->
+    <section id="tabContent-guide" class="hidden space-y-6">
+      <div class="bg-vega-surface border border-white/10 rounded-3xl p-6 lg:p-8 space-y-8 shadow-2xl">
+        <!-- Guide Header -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-2xl bg-alexa-cyan/15 text-alexa-cyan border border-alexa-cyan/30 shadow-neon-cyan">
+              <i data-lucide="book-open" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                The Ghost-Director: Reviewer Guide & Feature Blueprint
+              </h3>
+              <p class="text-xs text-slate-400">
+                Complete walkthrough for Amazon Hackathon judges to test every interconnected capability.
+              </p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-mono font-bold">
+            100% OPERATIONAL
+          </span>
+        </div>
+
+        <!-- 1-Click Guided Scenario Tours -->
+        <div class="space-y-4">
+          <h4 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+            <i data-lucide="play-circle" class="w-4 h-4 text-amazon-orange"></i>
+            1-Click Guided Demonstration Sequences (Run with Authentic Audio & Video)
+          </h4>
+          <p class="text-xs text-slate-300">
+            Click any button below to trigger an automated, multi-step choreographed scenario. Watch the living room cinema audio duck, the PiP slide in, and Alexa speak the director script aloud:
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Tour 1 -->
+            <button onclick="runGuidedTour('prime')" class="text-left p-4 rounded-2xl bg-gradient-to-r from-amazon-orange/15 to-transparent border border-amazon-orange/40 hover:border-amazon-orange transition-all group">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono font-bold text-amazon-orange uppercase flex items-center gap-1.5">
+                  <i data-lucide="package" class="w-4 h-4"></i>
+                  Tour 1: Amazon Prime Package Delivery
+                </span>
+                <span class="text-[10px] font-mono bg-amazon-orange text-black font-bold px-2 py-0.5 rounded">START TOUR</span>
+              </div>
+              <p class="text-xs text-slate-200">
+                1. Sets Fire TV movie playing & Bee wearable in Relaxing mode.<br/>
+                2. Ingests Prime Courier package drop from Ring Doorbell.<br/>
+                3. Bedrock AgentCore ducks living room score to 45% and projects PiP.<br/>
+                4. Alexa speaks director narration aloud and auto-dismisses after 12s.
+              </p>
+            </button>
+
+            <!-- Tour 2 -->
+            <button onclick="runGuidedTour('stranger')" class="text-left p-4 rounded-2xl bg-gradient-to-r from-red-500/15 to-transparent border border-red-500/40 hover:border-red-500 transition-all group">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono font-bold text-red-400 uppercase flex items-center gap-1.5">
+                  <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                  Tour 2: Suspicious Stranger Threat
+                </span>
+                <span class="text-[10px] font-mono bg-red-500 text-black font-bold px-2 py-0.5 rounded">START TOUR</span>
+              </div>
+              <p class="text-xs text-slate-200">
+                1. Detects unrecognized person pacing porch perimeter >45 seconds.<br/>
+                2. Bedrock elevates urgency to HIGH and ducks audio to 25%.<br/>
+                3. Displays high-contrast red security halo with target lock.<br/>
+                4. Automatically arms two-way intercom on Fire TV remote.
+              </p>
+            </button>
+
+            <!-- Tour 3 -->
+            <button onclick="runGuidedTour('deep-focus')" class="text-left p-4 rounded-2xl bg-gradient-to-r from-purple-500/15 to-transparent border border-purple-500/40 hover:border-purple-400 transition-all group">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono font-bold text-purple-300 uppercase flex items-center gap-1.5">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                  Tour 3: Bee Deep Focus (Ambient Whisper)
+                </span>
+                <span class="text-[10px] font-mono bg-purple-500 text-black font-bold px-2 py-0.5 rounded">START TOUR</span>
+              </div>
+              <p class="text-xs text-slate-200">
+                1. Bee wearable telemetry signals 96% Cognitive Immersion.<br/>
+                2. Doorbell/motion occurs at front door.<br/>
+                3. Ghost-Director protects flow state by <strong>suppressing video PiP</strong>.<br/>
+                4. Seamlessly projects a discreet, non-disruptive subtitle whisper.
+              </p>
+            </button>
+
+            <!-- Tour 4 -->
+            <button onclick="runGuidedTour('family')" class="text-left p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-transparent border border-emerald-500/40 hover:border-emerald-400 transition-all group">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono font-bold text-emerald-400 uppercase flex items-center gap-1.5">
+                  <i data-lucide="user-check" class="w-4 h-4"></i>
+                  Tour 4: Family Member Arrival (Face Match)
+                </span>
+                <span class="text-[10px] font-mono bg-emerald-500 text-black font-bold px-2 py-0.5 rounded">START TOUR</span>
+              </div>
+              <p class="text-xs text-slate-200">
+                1. Ring AI matches familiar profile ("Sarah, Spouse").<br/>
+                2. Chime synchronizes with TV score ducking.<br/>
+                3. Friendly welcome banner appears with custom director greeting.<br/>
+                4. Media playback flows without jarring interruptions.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4-Pillars Breakdown Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-white/10">
+          <div class="bg-black/40 p-4 rounded-2xl border border-white/5 space-y-2">
+            <div class="flex items-center gap-2 text-amazon-orange font-bold text-xs uppercase">
+              <i data-lucide="tv" class="w-4 h-4"></i>
+              Living Room
+            </div>
+            <h5 class="text-sm font-bold text-white">Fire TV 4K / Vega OS</h5>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              10-foot television safe area, Web Audio API dynamic ducking, glowing neon PiP overlays, and remote D-Pad keybindings.
+            </p>
+          </div>
+
+          <div class="bg-black/40 p-4 rounded-2xl border border-white/5 space-y-2">
+            <div class="flex items-center gap-2 text-amazon-orange font-bold text-xs uppercase">
+              <i data-lucide="bell" class="w-4 h-4"></i>
+              Front Door
+            </div>
+            <h5 class="text-sm font-bold text-white">Ring Video Doorbell</h5>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Vision classifier identifying Prime packages, unrecognized visitors, and doorbell dings with two-way voice talk.
+            </p>
+          </div>
+
+          <div class="bg-black/40 p-4 rounded-2xl border border-white/5 space-y-2">
+            <div class="flex items-center gap-2 text-alexa-cyan font-bold text-xs uppercase">
+              <i data-lucide="cpu" class="w-4 h-4"></i>
+              Cloud Brain
+            </div>
+            <h5 class="text-sm font-bold text-white">Alexa+ MCP & Bedrock</h5>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Streamable HTTP MCP (2025-11-25+) with Claude 3.5 Sonnet / Nova Pro generating Hollywood commentary scripts.
+            </p>
+          </div>
+
+          <div class="bg-black/40 p-4 rounded-2xl border border-white/5 space-y-2">
+            <div class="flex items-center gap-2 text-purple-400 font-bold text-xs uppercase">
+              <i data-lucide="watch" class="w-4 h-4"></i>
+              Wearable
+            </div>
+            <h5 class="text-sm font-bold text-white">Bee Intelligence</h5>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Continuous cognitive focus score (0-100), cardiac heart rate telemetry, and acoustic environmental awareness.
+            </p>
+          </div>
+        </div>
+
+        <!-- Documentation Links -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-4 bg-white/5 rounded-2xl border border-white/10 text-xs">
+          <div class="text-slate-300">
+            Detailed Friction Log & Product Feedback files are generated and included in the repository:
+          </div>
+          <div class="flex gap-2">
+            <a href="https://github.com/ankitkumargupta/amazon/blob/main/docs/friction-log.md" target="_blank" class="px-3 py-1.5 rounded-xl bg-amazon-orange text-black font-bold flex items-center gap-1">
+              <span>View Friction Log (10% Bonus)</span>
+            </a>
+            <a href="https://github.com/ankitkumargupta/amazon/blob/main/docs/product-feedback.md" target="_blank" class="px-3 py-1.5 rounded-xl bg-white/10 text-white font-bold hover:bg-white/20 flex items-center gap-1">
+              <span>View Product Feedback</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================== -->
+    <!-- TAB 4: MCP PROTOCOL & BEDROCK WIRE INSPECTOR                           -->
+    <!-- ====================================================================== -->
+    <section id="tabContent-inspector" class="hidden space-y-6">
+      <div class="bg-vega-surface border border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-3 rounded-2xl bg-purple-500/15 text-purple-400 border border-purple-500/30">
+              <i data-lucide="terminal" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-black text-white uppercase tracking-wider">
+                Model Context Protocol (MCP) Streamable Wire Inspector
+              </h3>
+              <p class="text-xs text-slate-400 font-mono">
+                Live JSON-RPC 2.0 frames & SSE Event Log from the-ghost-director-alexa-mcp (:3001)
+              </p>
+            </div>
+          </div>
+          <button onclick="clearWireLogs()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-400">Clear Logs</button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="space-y-2">
+            <span class="text-xs font-mono font-bold text-slate-400 uppercase">Live JSON-RPC / SSE Stream:</span>
+            <div id="mcpWireLogs" class="h-96 overflow-y-auto bg-black/80 rounded-2xl p-4 font-mono text-xs text-emerald-400 space-y-2 border border-white/10">
+              <div class="text-slate-500">// Connected to Streamable HTTP MCP server...</div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <span class="text-xs font-mono font-bold text-slate-400 uppercase">Current Living Room State Machine:</span>
+            <pre id="mcpStateDump" class="h-96 overflow-y-auto bg-black/80 rounded-2xl p-4 font-mono text-xs text-alexa-cyan border border-white/10">
+{ "status": "LOADING_STATE" }
+            </pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ======================================================================== -->
+  <!-- 4. "DIRECTOR MODE" PICTURE-IN-PICTURE (PIP) OVERLAY                      -->
+  <!-- ======================================================================== -->
+  <div id="pipContainer" class="hidden fixed top-8 right-8 z-50 w-[380px] sm:w-[460px] rounded-2xl overflow-hidden backdrop-blur-2xl bg-vega-surface/95 border-2 border-amazon-orange shadow-2xl director-pip-glow transition-all">
+    <!-- PiP Header -->
+    <div class="bg-vega-bg/90 px-4 py-2.5 flex items-center justify-between border-b border-white/10">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-amazon-orange animate-ping"></span>
+        <span class="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amazon-orange"></i>
+          Director Mode PiP
+        </span>
+        <span id="pipUrgencyBadge" class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amazon-orange/20 text-amazon-orange border border-amazon-orange/30">
+          MEDIUM PRIORITY
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="pipDuckingTag" class="text-[10px] font-mono text-alexa-cyan bg-white/5 px-2 py-0.5 rounded">Ducked to 45%</span>
+        <button onclick="dismissPip()" class="text-slate-400 hover:text-white p-1 rounded hover:bg-white/10">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Ring Stream Simulation -->
+    <div class="relative aspect-video w-full bg-black overflow-hidden">
+      <img id="pipCameraImage" src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80" alt="Ring Stream" class="w-full h-full object-cover" />
+      <div class="absolute inset-0 camera-scanline pointer-events-none opacity-40"></div>
+      
+      <div class="absolute inset-0 p-3 flex flex-col justify-between pointer-events-none">
+        <div class="flex justify-between items-center text-[10px] font-mono">
+          <span class="bg-black/75 px-2 py-0.5 rounded text-red-400 font-bold flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            LIVE RING 1080P
+          </span>
+          <span id="pipClock" class="bg-black/75 px-2 py-0.5 rounded text-slate-300">11:24:08 AM</span>
+        </div>
+
+        <!-- Target Detection Reticle -->
+        <div class="self-center my-auto w-32 h-24 border-2 border-dashed border-alexa-cyan/80 rounded flex flex-col justify-between p-1 animate-pulse">
+          <div class="flex justify-between text-[9px] font-mono font-bold text-alexa-cyan bg-black/75 px-1 rounded">
+            <span id="pipLockTag">OBJECT: PARCEL</span>
+            <span>98%</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between text-[10px] font-mono">
+          <span class="bg-black/75 px-2 py-0.5 rounded text-slate-300">Front Porch Entry</span>
+          <span id="pipTwoWayTag" class="hidden bg-emerald-500 text-black font-bold px-2 py-0.5 rounded animate-bounce">2-WAY TALK ON</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Script Card -->
+    <div class="p-4 bg-vega-surface border-t border-white/10 space-y-3">
+      <div class="flex items-start gap-3">
+        <div class="p-2 rounded-xl bg-amazon-orange/10 text-amazon-orange border border-amazon-orange/20 shrink-0">
+          <i data-lucide="package" id="pipIcon" class="w-5 h-5 text-amazon-orange"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between">
+            <h4 id="pipHeadline" class="text-sm font-bold text-white truncate">Amazon Prime Courier</h4>
+            <span class="text-[10px] font-mono text-alexa-cyan">AWS Bedrock AgentCore</span>
+          </div>
+          <p id="pipCommentary" class="mt-1 text-xs text-slate-300 leading-relaxed italic">
+            "Amazon Prime courier has placed a package on the mat. Media playback continues uninterrupted."
+          </p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 pt-2 border-t border-white/5">
+        <button onclick="toggleTwoWayTalk()" id="pipTalkBtn" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/10 flex items-center justify-center gap-1.5 transition-all">
+          <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+          <span id="pipTalkBtnText">Talk via Ring [Select]</span>
+        </button>
+        <button onclick="dismissPip()" class="py-2 px-3 rounded-xl text-xs font-semibold bg-white/5 text-slate-400 hover:text-white hover:bg-white/10">
+          Dismiss [Back]
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================== -->
+  <!-- 5. FIRE TV ALEXA VOICE REMOTE SIMULATOR MODAL                            -->
+  <!-- ======================================================================== -->
+  <div id="remoteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div class="relative bg-vega-surface border-2 border-white/20 rounded-[44px] p-6 w-[290px] shadow-2xl flex flex-col items-center space-y-6">
+      <button onclick="toggleRemoteModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center pt-2">
+        <div class="text-xs font-black tracking-widest text-slate-400 uppercase flex items-center justify-center gap-1">
+          <i data-lucide="tv" class="w-3.5 h-3.5 text-amazon-orange"></i>
+          Fire TV Remote
+        </div>
+        <div class="text-[10px] font-mono text-slate-500">Vega OS 10-Foot Controller</div>
+      </div>
+
+      <!-- Alexa Cyan Mic Button -->
+      <button onclick="openVoiceDialog()" class="w-16 h-16 rounded-full bg-alexa-cyan text-black hover:bg-cyan-300 transition-all flex items-center justify-center shadow-neon-cyan active:scale-95">
+        <i data-lucide="mic" class="w-7 h-7"></i>
+      </button>
+
+      <!-- D-Pad -->
+      <div class="relative w-44 h-44 rounded-full bg-black/60 border-2 border-white/15 p-2 flex items-center justify-center">
+        <button onclick="playRemoteClick()" class="absolute top-2 w-10 h-8 flex items-center justify-center text-slate-400 hover:text-white"><i data-lucide="arrow-up" class="w-5 h-5"></i></button>
+        <button onclick="playRemoteClick()" class="absolute bottom-2 w-10 h-8 flex items-center justify-center text-slate-400 hover:text-white"><i data-lucide="arrow-down" class="w-5 h-5"></i></button>
+        <button onclick="playRemoteClick()" class="absolute left-2 h-10 w-8 flex items-center justify-center text-slate-400 hover:text-white"><i data-lucide="arrow-left" class="w-5 h-5"></i></button>
+        <button onclick="playRemoteClick()" class="absolute right-2 h-10 w-8 flex items-center justify-center text-slate-400 hover:text-white"><i data-lucide="arrow-right" class="w-5 h-5"></i></button>
+        <button onclick="toggleTwoWayTalk()" class="w-16 h-16 rounded-full bg-vega-surfaceHover hover:bg-amazon-orange hover:text-black text-white font-black text-xs transition-all flex items-center justify-center border border-white/10 shadow-lg active:scale-95">
+          SELECT
+        </button>
+      </div>
+
+      <!-- Controls -->
+      <div class="w-full grid grid-cols-3 gap-3">
+        <button onclick="dismissPip()" class="h-10 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 flex items-center justify-center"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+        <button onclick="toggleRemoteModal()" class="h-10 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 flex items-center justify-center"><i data-lucide="home" class="w-4 h-4"></i></button>
+        <button class="h-10 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 flex items-center justify-center"><i data-lucide="menu" class="w-4 h-4"></i></button>
+        <button onclick="togglePlayback()" class="h-10 rounded-xl bg-amazon-orange/20 text-amazon-orange flex items-center justify-center"><i data-lucide="play" class="w-4 h-4"></i></button>
+        <button onclick="adjustVolume(-10)" class="h-10 rounded-xl bg-white/5 text-slate-300 flex items-center justify-center"><i data-lucide="volume-1" class="w-4 h-4"></i></button>
+        <button onclick="adjustVolume(10)" class="h-10 rounded-xl bg-white/5 text-slate-300 flex items-center justify-center"><i data-lucide="volume-2" class="w-4 h-4"></i></button>
+      </div>
+      <div class="text-[9px] text-slate-500 font-mono text-center">Keyboard: Arrows, Enter, Esc, P, M</div>
+    </div>
+  </div>
+
+  <!-- ======================================================================== -->
+  <!-- 6. ALEXA VOICE ASSISTANT DIALOG WITH TEXT-TO-SPEECH (TTS)                -->
+  <!-- ======================================================================== -->
+  <div id="voiceModal" class="hidden fixed inset-0 z-50 flex items-end justify-center p-6 lg:p-12 bg-black/60 backdrop-blur-md">
+    <div class="relative w-full max-w-2xl bg-vega-surface/95 border-2 border-alexa-cyan/60 rounded-3xl p-6 shadow-neon-cyan space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-alexa-cyan/20 text-alexa-cyan flex items-center justify-center"><i data-lucide="mic" class="w-4 h-4"></i></div>
+          <h3 class="text-sm font-bold text-white uppercase">Alexa+ Ghost-Director (Speech Enabled)</h3>
+        </div>
+        <button onclick="closeVoiceDialog()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div id="voiceConversation" class="space-y-2 py-2">
+        <div class="text-xs text-slate-400 italic">"Ask Alexa about the front door, courier, or Fire TV environment."</div>
+      </div>
+
+      <div class="flex gap-1.5 flex-wrap">
+        <button onclick="askVoice('Who is at the front door?')" class="text-[11px] bg-white/5 px-2.5 py-1 rounded-lg text-slate-300 hover:text-white">Who is at the front door?</button>
+        <button onclick="askVoice('What did the courier deliver?')" class="text-[11px] bg-white/5 px-2.5 py-1 rounded-lg text-slate-300 hover:text-white">What did courier deliver?</button>
+        <button onclick="askVoice('Dismiss picture-in-picture.')" class="text-[11px] bg-white/5 px-2.5 py-1 rounded-lg text-slate-300 hover:text-white">Dismiss overlay</button>
+      </div>
+
+      <div class="flex gap-2">
+        <input id="voiceInput" type="text" placeholder="Speak or type to Alexa+..." class="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-alexa-cyan" onkeydown="if(event.key==='Enter') askVoice(this.value)" />
+        <button onclick="askVoice(document.getElementById('voiceInput').value)" class="px-4 py-2 bg-alexa-cyan text-black font-bold text-xs rounded-xl hover:bg-cyan-300">Ask</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================== -->
+  <!-- JAVASCRIPT: WEB AUDIO API, SPEECH SYNTHESIS & MCP STREAMING              -->
+  <!-- ======================================================================== -->
+  <script>
+    lucide.createIcons();
+
+    // 1. Web Audio Engine (Real Audio Ducking & SFX)
+    let audioCtx = null;
+    let masterGain = null;
+    let soundtrackOsc = null;
+    let isAudioEngineActive = false;
+    let baseVolume = 0.75;
+    let currentDuckingLevel = 1.0;
+
+    function initAudioEngine() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(baseVolume, audioCtx.currentTime);
+        masterGain.connect(audioCtx.destination);
+
+        // Ambient cinematic synth drone
+        soundtrackOsc = audioCtx.createOscillator();
+        const filter = audioCtx.createBiquadFilter();
+        soundtrackOsc.type = 'triangle';
+        soundtrackOsc.frequency.setValueAtTime(65.41, audioCtx.currentTime); // C2
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(320, audioCtx.currentTime);
+
+        soundtrackOsc.connect(filter);
+        filter.connect(masterGain);
+        soundtrackOsc.start();
+        isAudioEngineActive = true;
+
+        document.getElementById('audioToggleIcon').className = 'w-4 h-4 text-emerald-400 animate-pulse';
+        document.getElementById('audioToggleText').innerText = 'Audio: LIVE';
+        logWire('AUDIO', 'Web Audio API Engine initialized (Real Ducking Active)');
+      } catch (e) {
+        console.warn('AudioContext init error:', e);
+      }
+    }
+
+    function toggleAudioEngine() {
+      if (!audioCtx) {
+        initAudioEngine();
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        document.getElementById('audioToggleText').innerText = 'Audio: LIVE';
+        document.getElementById('audioToggleIcon').className = 'w-4 h-4 text-emerald-400 animate-pulse';
+      } else if (audioCtx.state === 'running') {
+        audioCtx.suspend();
+        document.getElementById('audioToggleText').innerText = 'Audio: MUTED';
+        document.getElementById('audioToggleIcon').className = 'w-4 h-4 text-slate-400';
+      }
+    }
+
+    // Apply real audio ducking via Web Audio GainNode
+    function applyRealAudioDucking(targetLevel) {
+      currentDuckingLevel = targetLevel;
+      if (masterGain && audioCtx) {
+        masterGain.gain.setTargetAtTime(baseVolume * targetLevel, audioCtx.currentTime, 0.15);
+      }
+    }
+
+    // Authentic Chime Sound Effect
+    function playChimeSound() {
+      if (!audioCtx) return;
+      try {
+        const chimeOsc = audioCtx.createOscillator();
+        const chimeGain = audioCtx.createGain();
+        chimeOsc.type = 'sine';
+        chimeOsc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+        chimeOsc.frequency.exponentialRampToValueAtTime(587.33, audioCtx.currentTime + 0.4); // D5
+        chimeGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        chimeGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        chimeOsc.connect(chimeGain);
+        chimeGain.connect(audioCtx.destination);
+        chimeOsc.start();
+        chimeOsc.stop(audioCtx.currentTime + 0.85);
+      } catch (e) {}
+    }
+
+    function playRemoteClick() {
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.05);
+      } catch(e) {}
+    }
+
+    // 2. Real Alexa Speech Synthesis (TTS)
+    function speakAlexaText(text) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.02;
+
+        const voices = window.speechSynthesis.getVoices();
+        const naturalVoice = voices.find(v => v.lang.includes('en') && (v.name.includes('Samantha') || v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Alex')));
+        if (naturalVoice) utterance.voice = naturalVoice;
+
+        window.speechSynthesis.speak(utterance);
+        logWire('SPEECH', `Alexa Spoke: "${text.slice(0, 60)}..."`);
+      } catch(e) {}
+    }
+
+    // 3. Tab Switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
+      document.getElementById('tabBtn-' + tabId)?.classList.add('tab-active');
+
+      document.querySelectorAll('section[id^="tabContent-"]').forEach(sec => sec.classList.add('hidden'));
+      document.getElementById('tabContent-' + tabId)?.classList.remove('hidden');
+    }
+
+    // 4. Logging & Telemetry Wire
+    function logWire(tag, msg) {
+      const logs = document.getElementById('mcpWireLogs');
+      if (!logs) return;
+      const el = document.createElement('div');
+      el.className = 'text-[11px] font-mono leading-tight';
+      el.innerHTML = `<span class="text-slate-500">[${new Date().toLocaleTimeString()}]</span> <span class="text-amazon-orange font-bold">${tag}</span>: ${msg}`;
+      logs.prepend(el);
+      if (logs.children.length > 50) logs.removeChild(logs.lastChild);
+    }
+
+    function clearWireLogs() {
+      const logs = document.getElementById('mcpWireLogs');
+      if (logs) logs.innerHTML = '<div class="text-slate-500">// Logs cleared.</div>';
+    }
+
+    // 5. Real-Time MCP Server Synchronization (WebSocket + SSE + Polling)
+    let isPlaying = true;
+    let twoWayMicActive = false;
+
+    function initMcpStream() {
+      // Try WebSocket
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+      try {
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          document.getElementById('statusBarMcp').innerText = 'WS CONNECTED (:3001)';
+          logWire('TRANSPORT', 'Bi-directional WebSocket connection established.');
+        };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.fullState) handleStateUpdate(data.fullState);
+            else if (data.type) logWire('EVENT', data.type);
+          } catch(e) {}
+        };
+        ws.onerror = () => {
+          initSseStream();
+        };
+      } catch(e) {
+        initSseStream();
+      }
+    }
+
+    function initSseStream() {
+      try {
+        const sse = new EventSource('/api/events');
+        sse.onopen = () => {
+          document.getElementById('statusBarMcp').innerText = 'SSE CONNECTED (:3001)';
+          logWire('TRANSPORT', 'Server-Sent Events stream connected.');
+        };
+        sse.onmessage = (e) => {
+          try {
+            const data = JSON.parse(e.data);
+            const state = data.fullState || (data.ring ? data : null);
+            if (state) handleStateUpdate(state);
+          } catch(err) {}
+        };
+        sse.onerror = () => {
+          document.getElementById('statusBarMcp').innerText = 'POLLING ACTIVE (:3001)';
+          setInterval(fetchStateSnapshot, 1500);
+        };
+      } catch(e) {
+        setInterval(fetchStateSnapshot, 1500);
+      }
+    }
+
+    async function fetchStateSnapshot() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const state = await res.json();
+          handleStateUpdate(state);
+        }
+      } catch(e) {}
+    }
+
+    // Handle State Update from MCP Server
+    function handleStateUpdate(state) {
+      if (!state) return;
+      document.getElementById('mcpStateDump').innerText = JSON.stringify(state, null, 2);
+
+      // Bedrock
+      if (state.bedrock) {
+        const lat = state.bedrock.lastDecision?.latencyMs || 182;
+        document.getElementById('statusBarBedrock').innerText = `${lat}ms (Claude 3.5 Sonnet)`;
+        document.getElementById('bedrockInspectorLatency').innerText = `${lat}ms inference`;
+
+        if (state.bedrock.lastDecision) {
+          const d = state.bedrock.lastDecision;
+          document.getElementById('inspectorAction').innerText = d.action;
+          document.getElementById('inspectorDucking').innerText = Math.round((d.audioDuckingLevel || 0.45) * 100) + '%';
+          document.getElementById('inspectorCommentary').innerText = `"${d.directorCommentary}"`;
+          document.getElementById('inspectorReasoning').innerText = d.reasoning;
+        }
+      }
+
+      // Bee
+      if (state.bee) {
+        document.getElementById('statusBarBee').innerText = `${state.bee.focusState} (Focus: ${state.bee.focusIndex}% • ${state.bee.heartRateBpm} BPM)`;
+      }
+
+      // Ring
+      if (state.ring?.lastEvent) {
+        document.getElementById('statusBarRing').innerText = `${state.ring.lastEvent.label}`;
+      }
+
+      // Fire TV
+      if (state.fireTv) {
+        const duck = state.fireTv.currentAudioDucking ?? 1.0;
+        applyRealAudioDucking(duck);
+        const effVol = Math.round((state.fireTv.baseVolume || 75) * duck);
+        document.getElementById('volumeLevelText').innerText = duck < 0.9 ? `${effVol}% (Ducked ${(1 - duck) * 100}%)` : `${effVol}% (Full Cinema Score)`;
+
+        // Spectrum bars scale
+        document.querySelectorAll('#audioSpectrumBars div').forEach(b => {
+          b.style.opacity = duck < 0.9 ? '0.6' : '1.0';
+          b.className = duck < 0.9 ? 'flex-1 bg-amazon-orange rounded-full transition-all duration-200' : 'flex-1 bg-alexa-cyan rounded-full transition-all duration-200';
+        });
+
+        // Whisper Subtitle
+        const whisperBox = document.getElementById('subtitleWhisperBox');
+        if (state.fireTv.subtitleWhisper) {
+          whisperBox.classList.remove('hidden');
+          document.getElementById('subtitleWhisperText').innerText = state.fireTv.subtitleWhisper;
+        } else {
+          whisperBox.classList.add('hidden');
+        }
+
+        // PiP Box
+        const pip = document.getElementById('pipContainer');
+        if (state.fireTv.pipActive && state.fireTv.pipData) {
+          pip.classList.remove('hidden');
+          const d = state.fireTv.pipData;
+          document.getElementById('pipHeadline').innerText = d.pipHeadline || 'Front Door Alert';
+          document.getElementById('pipCommentary').innerText = `"${d.directorCommentary}"`;
+          document.getElementById('pipUrgencyBadge').innerText = `${d.urgency || 'MEDIUM'} PRIORITY`;
+          document.getElementById('pipDuckingTag').innerText = `Ducked to ${Math.round((d.audioDuckingLevel || 0.45) * 100)}%`;
+          if (state.ring?.lastEvent?.snapshotUrl) {
+            document.getElementById('pipCameraImage').src = state.ring.lastEvent.snapshotUrl;
+          }
+          if (d.urgency === 'HIGH' || d.urgency === 'CRITICAL') {
+            pip.style.borderColor = '#EF4444';
+          } else {
+            pip.style.borderColor = '#FF9900';
+          }
+        } else {
+          pip.classList.add('hidden');
+        }
+      }
+    }
+
+    // 6. Action Functions
+    async function triggerPreset(presetId) {
+      initAudioEngine();
+      playChimeSound();
+      logWire('TRIGGER', `Injecting Ring event preset: ${presetId}`);
+
+      const presets = {
+        'prime-courier': {
+          eventType: 'DELIVERY',
+          label: 'Amazon Delivery Associate',
+          packageDetected: true,
+          confidence: 0.98,
+          snapshotUrl: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+          description: 'Prime courier safely placed package on mat.'
+        },
+        'stranger-lingering': {
+          eventType: 'STRANGER',
+          label: 'Unrecognized Person Pacing Porch',
+          packageDetected: false,
+          confidence: 0.94,
+          snapshotUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+          description: 'Individual lingering at entryway >45s.'
+        },
+        'doorbell-chime': {
+          eventType: 'DOORBELL',
+          label: 'Front Entryway Ding',
+          packageDetected: false,
+          confidence: 0.99,
+          snapshotUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18086f6?auto=format&fit=crop&w=800&q=80',
+          description: 'Visitor at front door.'
+        },
+        'family-return': {
+          eventType: 'FAMILY',
+          label: 'Sarah Arrived Home',
+          packageDetected: false,
+          personName: 'Sarah',
+          confidence: 0.97,
+          snapshotUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+          description: 'Recognized profile approaching front porch.'
+        }
+      };
+
+      const payload = presets[presetId];
+      if (!payload) return;
+
+      try {
+        const res = await fetch('/webhooks/ring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        logWire('BEDROCK', `Decision: ${data.decisionSummary?.action} | Ducking: ${data.decisionSummary?.audioDucking}`);
+        if (data.decisionSummary?.directorCommentary) {
+          speakAlexaText(data.decisionSummary.directorCommentary);
+        }
+      } catch(e) {
+        logWire('ERROR', 'Webhook trigger error: ' + e.message);
+      }
+    }
+
+    async function setBeeContext(focusState, focusIndex, hr, noise) {
+      logWire('BEE', `Wearable update: ${focusState} (${focusIndex}%)`);
+      try {
+        await fetch('/telemetry/bee', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ focusState, focusIndex, heartRateBpm: hr, ambientNoiseDb: noise })
+        });
+      } catch(e) {}
+    }
+
+    async function dismissPip() {
+      logWire('ACTION', 'Dismissing Director PiP');
+      applyRealAudioDucking(1.0);
+      try {
+        await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'DISMISS_PIP' })
+        });
+      } catch(e) {}
+    }
+
+    async function togglePlayback() {
+      initAudioEngine();
+      isPlaying = !isPlaying;
+      document.getElementById('playPauseIcon').setAttribute('data-lucide', isPlaying ? 'pause' : 'play');
+      document.getElementById('playbackStatusText').innerText = isPlaying ? 'Now Playing' : 'Playback Paused';
+      lucide.createIcons();
+
+      try {
+        await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'TOGGLE_PLAY_PAUSE' })
+        });
+      } catch(e) {}
+    }
+
+    async function toggleTwoWayTalk() {
+      twoWayMicActive = !twoWayMicActive;
+      playRemoteClick();
+      const tag = document.getElementById('pipTwoWayTag');
+      const btn = document.getElementById('pipTalkBtn');
+      if (twoWayMicActive) {
+        tag?.classList.remove('hidden');
+        btn?.classList.add('bg-emerald-500', 'text-black');
+        speakAlexaText('Two way audio connected through Ring doorbell.');
+      } else {
+        tag?.classList.add('hidden');
+        btn?.classList.remove('bg-emerald-500', 'text-black');
+      }
+
+      try {
+        await fetch('/api/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'TOGGLE_MIC' })
+        });
+      } catch(e) {}
+    }
+
+    async function resetDemoState() {
+      applyRealAudioDucking(1.0);
+      logWire('SYSTEM', 'Resetting living room state to baseline');
+      try {
+        await fetch('/api/reset', { method: 'POST' });
+      } catch(e) {}
+    }
+
+    // 7. Automated Guided Tours
+    async function runGuidedTour(scenario) {
+      initAudioEngine();
+      logWire('TOUR', `Starting automated scenario: ${scenario}`);
+      switchTab('cinema');
+
+      try {
+        const res = await fetch('/api/demo/run-scenario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario })
+        });
+        const data = await res.json();
+        playChimeSound();
+
+        if (data.decision?.directorCommentary) {
+          speakAlexaText(data.decision.directorCommentary);
+        }
+
+        // Auto dismiss after 14s for clean tour
+        setTimeout(() => {
+          dismissPip();
+        }, 14000);
+      } catch(e) {
+        logWire('ERROR', 'Tour error: ' + e.message);
+      }
+    }
+
+    // 8. Alexa Voice Assistant Dialog & Audio Response
+    function openVoiceDialog() {
+      document.getElementById('voiceModal').classList.remove('hidden');
+    }
+    function closeVoiceDialog() {
+      document.getElementById('voiceModal').classList.add('hidden');
+    }
+
+    async function askVoice(query) {
+      if (!query) return;
+      initAudioEngine();
+      const conv = document.getElementById('voiceConversation');
+      conv.innerHTML = `
+        <div class="text-xs font-bold text-slate-300">You: "${query}"</div>
+        <div class="text-xs text-alexa-cyan font-mono animate-pulse">Evaluating context with Amazon Bedrock AgentCore...</div>
+      `;
+
+      try {
+        const res = await fetch('/api/alexa/voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ utterance: query })
+        });
+        const data = await res.json();
+        const speech = data.speech || 'All is quiet at the front door.';
+        conv.innerHTML = `
+          <div class="text-xs font-bold text-slate-300">You: "${query}"</div>
+          <div class="text-sm font-semibold text-white bg-alexa-cyan/15 p-3 rounded-xl border border-alexa-cyan/30 mt-2">
+            Alexa: "${speech}"
+          </div>
+        `;
+        speakAlexaText(speech);
+      } catch(e) {
+        conv.innerHTML += `<div class="text-xs text-red-400">Connection error.</div>`;
+      }
+    }
+
+    function toggleRemoteModal() {
+      document.getElementById('remoteModal').classList.toggle('hidden');
+    }
+
+    // 9. 10-Foot TV Keyboard Remote Bindings
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'p' || e.key === 'P' || e.key === ' ') {
+        e.preventDefault();
+        togglePlayback();
+      } else if (e.key === 'Escape' || e.key === 'Backspace') {
+        dismissPip();
+        closeVoiceDialog();
+      } else if (e.key === 'm' || e.key === 'M') {
+        openVoiceDialog();
+      } else if (e.key === '1') {
+        switchTab('cinema');
+      } else if (e.key === '2') {
+        switchTab('judge');
+      } else if (e.key === '3') {
+        switchTab('guide');
+      }
+    });
+
+    // Start Real-Time Stream Handshake
+    initMcpStream();
+  </script>
+</body>
+</html>

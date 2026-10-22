@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF9900" />
+      <stop offset="100%" stop-color="#00CAFF" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="#0E131F" />
+  <circle cx="50" cy="50" r="38" stroke="url(#grad)" stroke-width="4" stroke-dasharray="6 4" />
+  <!-- Ghost Director Silhouette -->
+  <path d="M50 24C38.954 24 30 32.954 30 44V68C30 70.2 32 72 34 71L40 67L46 71L50 68L54 71L60 67L66 71C68 72 70 70.2 70 68V44C70 32.954 61.046 24 50 24Z" fill="url(#grad)" opacity="0.9" />
+  <circle cx="43" cy="42" r="3.5" fill="#0E131F" />
+  <circle cx="57" cy="42" r="3.5" fill="#0E131F" />
+  <!-- Clapperboard line -->
+  <line x1="30" y1="52" x2="70" y2="52" stroke="#0E131F" stroke-width="2" />
+</svg>
